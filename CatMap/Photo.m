@@ -35,9 +35,4 @@
     return photoURL;
 }
 
-
-
-
-
-
 @end

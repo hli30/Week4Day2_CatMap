@@ -9,9 +9,10 @@
 #import "MapViewController.h"
 #import "Photo.h"
 
-@interface MapViewController ()
+@interface MapViewController () <MKMapViewDelegate>
 
 @property (weak, nonatomic) IBOutlet MKMapView *mapView;
+
 
 @end
 
@@ -19,9 +20,8 @@
 
 - (void)viewDidLoad {
     [super viewDidLoad];
+    self.mapView.delegate = self;
     [self configureView];
-
-    NSLog(@"MapView:%f, %f", self.photoCoord.latitude, self.photoCoord.longitude);
 }
 
 - (void)setDetails:(Photo *)photo{
@@ -32,11 +32,10 @@
 - (void)configureView{
     self.navigationItem.title = self.photo.title;
     self.photoCoord = self.photo.coordinate;
+    
     MKCoordinateSpan span = MKCoordinateSpanMake(.5f, .5f);
     self.mapView.region = MKCoordinateRegionMake(self.photoCoord, span);
     [self.mapView addAnnotation:self.photo];
 }
-
-
 
 @end

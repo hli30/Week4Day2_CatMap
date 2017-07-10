@@ -22,7 +22,7 @@ SearchViewControllerDelegate
 >
 
 @property (weak, nonatomic) IBOutlet UICollectionView *collectionView;
-@property (nonatomic) NSMutableArray *catPhotoArray;
+@property (nonatomic) NSMutableArray *photoArray;
 @property (nonatomic) NetworkingManager *networkingManager;
 
 @end
@@ -32,23 +32,29 @@ SearchViewControllerDelegate
 - (void)viewDidLoad {
     [super viewDidLoad];
     self.networkingManager = [[NetworkingManager alloc] init];
-    
-    [self.networkingManager fetchPhotoDataWithCompletion:^(NSArray *photoData) {
-        self.catPhotoArray = [NSMutableArray array];
-        
-        for (NSDictionary *cat in photoData) {
-            Photo *catPhoto = [[Photo alloc] initWithDictionary:cat];
-            [self.catPhotoArray addObject:catPhoto];
-        }
-        [[NSOperationQueue mainQueue] addOperationWithBlock:^{
-            [self.collectionView reloadData];
-        }];
-    }];
+    [self fetchPhotoDataForTag:@"cat"];
     
     UIBarButtonItem *searchButton = [[UIBarButtonItem alloc] initWithTitle:@"Search" style:UIBarButtonItemStylePlain target:self action:@selector(searchButtonPressed:)];
     
     self.navigationItem.rightBarButtonItem = searchButton;
 }
+
+- (void)fetchPhotoDataForTag:(NSString *)tag{
+    [self.networkingManager fetchPhotoDataForTag:tag withCompletion:^(NSArray *photoData) {
+        self.photoArray = [NSMutableArray array];
+        
+        for (NSDictionary *cat in photoData) {
+            Photo *catPhoto = [[Photo alloc] initWithDictionary:cat];
+            [self.photoArray addObject:catPhoto];
+        }
+        [[NSOperationQueue mainQueue] addOperationWithBlock:^{
+            [self.collectionView reloadData];
+        }];
+    }];
+}
+
+
+#pragma mark - Button Action
 
 - (void)searchButtonPressed:(UIBarButtonItem *)sender{
     [self performSegueWithIdentifier:@"searchView" sender:self];
@@ -61,6 +67,14 @@ SearchViewControllerDelegate
     if ([[segue identifier] isEqualToString:@"searchView"]) {
         SearchViewController *searchVC = (SearchViewController *)[segue destinationViewController];
         searchVC.delegate = self;
+    } else if ([[segue identifier] isEqualToString:@"showDetail"]) {
+        MapViewController *mapViewVC = (MapViewController *)[segue destinationViewController];
+        NSIndexPath *path = (NSIndexPath *)sender;
+        
+        Photo *currentPhoto = self.photoArray[path.item];
+        
+        [mapViewVC setDetails:currentPhoto];
+        mapViewVC.photoCoord = currentPhoto.coordinate;
     }
 }
 
@@ -68,8 +82,8 @@ SearchViewControllerDelegate
 #pragma mark - Delegate
 
 - (void)passInfo:(NSString *)info{
-    
-    
+    [self fetchPhotoDataForTag:info];
+    [self.collectionView reloadData];
 }
 
 
@@ -80,30 +94,29 @@ SearchViewControllerDelegate
 }
 
 - (NSInteger)collectionView:(UICollectionView *)collectionView numberOfItemsInSection:(NSInteger)section{
-    return self.catPhotoArray.count;
+    return self.photoArray.count;
 }
 
 - (UICollectionViewCell *)collectionView:(UICollectionView *)collectionView cellForItemAtIndexPath:(NSIndexPath *)indexPath{
     MyCustomCollectionViewCell *cell = [collectionView dequeueReusableCellWithReuseIdentifier:@"myCell" forIndexPath:indexPath];
     
-    if (![self.catPhotoArray[indexPath.item] catImage]) {
-        Photo *currentPhoto = self.catPhotoArray[indexPath.item];
+    if (![self.photoArray[indexPath.item] catImage]) {
+        Photo *currentPhoto = self.photoArray[indexPath.item];
                         
         [self.networkingManager fetchCatImageForURL:currentPhoto.photoURL completion:^(UIImage *image) {
-//            MyCustomCollectionViewCell * cell = (MyCustomCollectionViewCell *)[collectionView cellForItemAtIndexPath:indexPath];
             currentPhoto.catImage = image;
             [self.networkingManager fetchLocationCoordinateForPhoto:currentPhoto.photoId completion:^(CLLocationCoordinate2D location) {
                 currentPhoto.coordinate = location;
                 [[NSOperationQueue mainQueue] addOperationWithBlock:^{
-                    cell.catImageView.image = [self.catPhotoArray[indexPath.item] catImage];
+                    cell.catImageView.image = [self.photoArray[indexPath.item] catImage];
                 }];
             }];
         }];
     } else {
-        cell.catImageView.image = [self.catPhotoArray[indexPath.item] catImage];
+        cell.catImageView.image = [self.photoArray[indexPath.item] catImage];
     }
     
-    cell.catLabel.text = [self.catPhotoArray[indexPath.item] title];
+    cell.catLabel.text = [self.photoArray[indexPath.item] title];
     
     return cell;
 }
@@ -112,42 +125,7 @@ SearchViewControllerDelegate
 #pragma mark - CollectionView didSelect
 
 -(void)collectionView:(UICollectionView *)collectionView didSelectItemAtIndexPath:(NSIndexPath *)indexPath{
-
-    MapViewController *mapViewVC = [[MapViewController alloc] init];
-    Photo *currentPhoto = self.catPhotoArray[indexPath.item];
-    
-    [mapViewVC setDetails:currentPhoto];
-//    mapViewVC.photoCoord = currentPhoto.coordinate;
-    [self.navigationController pushViewController:mapViewVC animated:YES];
+    [self performSegueWithIdentifier:@"showDetail" sender:indexPath];
 }
-
-
-
-//- (NSURL *)buildURL{
-//    NSURL *url = [NSURL URLWithString:@"https://api.flickr.com/services/rest/?method=flickr.photos.search&api_key=525ee4cddb2e8d117d3e680cde6cb0ae&tags=cat&has_geo=1&extras=url_m&format=json&nojsoncallback=1"];
-//    
-//    NSURLComponents *urlComponents = [[NSURLComponents alloc] init];
-//    
-//    urlComponents.host = @"api.flickr.com";
-//    urlComponents.path = @"/services/rest/";
-//    
-//    NSURLQueryItem *methodItem = [NSURLQueryItem queryItemWithName:@"method"
-//                                                             value:@"flickr.photos.search"];
-//    NSURLQueryItem *apiKeyItem = [NSURLQueryItem queryItemWithName:@"api_key"
-//                                                             value:@"525ee4cddb2e8d117d3e680cde6cb0ae"];
-//    NSURLQueryItem *tagItem = [NSURLQueryItem queryItemWithName:@"tags"
-//                                                          value:@"cat"];
-//    NSURLQueryItem *hasGeoItem = [NSURLQueryItem queryItemWithName:@"has_geo"
-//                                                             value:@"1"];
-//    NSURLQueryItem *extrasItem = [NSURLQueryItem queryItemWithName:@"extras"
-//                                                             value:@"url_m"];
-//    NSURLQueryItem *formatItem = [NSURLQueryItem queryItemWithName:@"format"
-//                                                             value:@"json&nojsoncallback=1"];
-//    
-//    urlComponents.queryItems = @[methodItem, apiKeyItem, tagItem, hasGeoItem, extrasItem, formatItem];
-//    NSURL *url = [urlComponents URL];
-//    
-//    return url;
-//}
 
 @end

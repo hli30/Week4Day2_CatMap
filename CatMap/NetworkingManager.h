@@ -13,7 +13,7 @@
 
 @interface NetworkingManager : NSObject
 
-- (void)fetchPhotoDataWithCompletion:(void (^)(NSArray *photoData))completionHandler;
+- (void)fetchPhotoDataForTag:(NSString *)tag withCompletion:(void (^)(NSArray *photoData))completionHandler;
 - (void)fetchCatImageForURL:(NSURL *)url completion:(void (^)(UIImage * image))completionHandler;
 - (void)fetchLocationCoordinateForPhoto:(NSString *)photoId completion:(void (^)(CLLocationCoordinate2D location))completionHandler;
 

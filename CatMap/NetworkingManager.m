@@ -12,9 +12,11 @@
 @implementation NetworkingManager
 
 //Get image data
--(void)fetchPhotoDataWithCompletion:(void (^)(NSArray *photoData))completionHandler{
+-(void)fetchPhotoDataForTag:(NSString *)tag withCompletion:(void (^)(NSArray *photoData))completionHandler{
     
-    NSURL *url = [[NSURL alloc] initWithString:@"https://api.flickr.com/services/rest/?method=flickr.photos.search&api_key=525ee4cddb2e8d117d3e680cde6cb0ae&tags=cat&has_geo=1&extras=url_m&format=json&nojsoncallback=1"];
+    NSString *urlString = [NSString stringWithFormat:@"https://api.flickr.com/services/rest/?method=flickr.photos.search&api_key=525ee4cddb2e8d117d3e680cde6cb0ae&tags=%@&has_geo=1&extras=url_m&format=json&nojsoncallback=1", tag];
+    
+    NSURL *url = [[NSURL alloc] initWithString:urlString];
     NSURLRequest *urlRequest = [[NSURLRequest alloc] initWithURL:url];
     
     NSURLSessionConfiguration *configuration = [NSURLSessionConfiguration defaultSessionConfiguration];
